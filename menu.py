@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-menu.py - Menu số cho Roblox Auto Rejoin (đặt cùng thư mục với rejoin.py)
-Chạy: python menu.py
+menu.py - Menu so cho Roblox Auto Rejoin (co cong nhap key)
+Chay: python menu.py
 """
 import argparse
 import json
@@ -20,11 +20,15 @@ try:
 except ImportError:
     sys.exit("Không thấy rejoin.py cùng thư mục, tổng tài duck.")
 
+try:
+    import auth
+except ImportError:
+    sys.exit("Thiếu auth.py, chạy lại lệnh cài tool.")
+
 col = R.col
 VERSION = "1.0"
 
 
-# ───────────────────────── UI ─────────────────────────
 def clear():
     sys.stdout.write("\033[H\033[J")
     sys.stdout.flush()
@@ -34,7 +38,7 @@ def banner():
     clear()
     w = min(shutil.get_terminal_size((44, 20)).columns, 52)
     print(col("═" * w, "c"))
-    print(col("   TECH  ·  ROBLOX AUTO REJOIN", "B", "c"))
+    print(col("  TUẤT TECH  ·  ROBLOX AUTO REJOIN", "B", "c"))
     print(col("  Version %s · Termux" % VERSION, "d"))
     print(col("═" * w, "c"))
 
@@ -68,7 +72,6 @@ def warn(msg):
     print(col("! ", "y") + msg)
 
 
-# ───────────────────────── Helpers ─────────────────────────
 def init():
     cfg = R.load_cfg()
     cfg["settings"].setdefault("package_prefix", "com.roblox")
@@ -105,7 +108,6 @@ def ensure_inst(cfg, pkg, place=None):
     return inst
 
 
-# ───────────────────────── 1. Start ─────────────────────────
 def m_start():
     cfg = init()
     ready = [i for i in cfg["instances"] if i.get("enabled", True) and has_place(i)]
@@ -122,7 +124,6 @@ def m_start():
     pause()
 
 
-# ───────────────────────── 2. Setup Game ID ─────────────────────────
 def m_setup():
     cfg = init()
     pkgs = get_pkgs(cfg)
@@ -158,14 +159,13 @@ def m_setup():
     pause()
 
 
-# ───────────────────────── 3. Cookie login ─────────────────────────
 def cookie_db_candidates(pkg):
     base = "/data/data/%s/app_webview/Default" % pkg
     return [base + "/Cookies", base + "/Network/Cookies"]
 
 
 def inject_cookie(pkg, cookie):
-    """Ghi .ROBLOSECURITY vào WebView của bản Roblox (cần root, acc của chính mình)."""
+    """Ghi .ROBLOSECURITY vao WebView (can root, acc cua chinh minh)."""
     if not R.Shell.root:
         return False, "cần root"
     if len(cookie) < 100:
@@ -267,7 +267,6 @@ def m_cookie():
     pause()
 
 
-# ───────────────────────── 4. Webhook ─────────────────────────
 def m_webhook():
     cfg = init()
     cur = cfg["settings"].get("webhook", "")
@@ -298,7 +297,6 @@ def m_webhook():
     pause()
 
 
-# ───────────────────────── 5. Check setup ─────────────────────────
 def m_check():
     cfg = init()
     s = cfg["settings"]
@@ -333,7 +331,6 @@ def m_check():
     pause()
 
 
-# ───────────────────────── 6. Prefix ─────────────────────────
 def m_prefix():
     cfg = init()
     cur = cfg["settings"]["package_prefix"]
@@ -349,7 +346,6 @@ def m_prefix():
     pause()
 
 
-# ───────────────────────── Main loop ─────────────────────────
 MENU = [
     ("1", "Start Auto Rejoin", m_start),
     ("2", "Setup Game ID cho Packages", m_setup),
@@ -362,6 +358,9 @@ MENU = [
 
 
 def main():
+    if not auth.require():
+        print("Chưa có key hợp lệ, thoát.")
+        return
     while True:
         banner()
         for k, label, _ in MENU:
@@ -369,7 +368,7 @@ def main():
         print(col("─" * 44, "d"))
         c = ask("Nhập lệnh")
         if c == "0":
-            print("Tạm biệt tổng tài technologia.")
+            print("Tạm biệt tổng tài duck.")
             return
         fn = next((f for k, _, f in MENU if k == c), None)
         if fn is None:
