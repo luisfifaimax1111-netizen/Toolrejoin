@@ -34,7 +34,7 @@ def banner():
     clear()
     w = min(shutil.get_terminal_size((44, 20)).columns, 52)
     print(col("═" * w, "c"))
-    print(col("  TUẤT TECH  ·  ROBLOX AUTO REJOIN", "B", "c"))
+    print(col("  TECH BỐ RYN ·  ROBLOX AUTO REJOIN", "B", "c"))
     print(col("  Version %s · Termux" % VERSION, "d"))
     print(col("═" * w, "c"))
 
