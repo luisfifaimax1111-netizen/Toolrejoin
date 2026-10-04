@@ -18,30 +18,6 @@ echo -e "${C}══════════════════════�
 echo -e "${C}   TUẤT TECH · ROBLOX AUTO REJOIN${X}"
 echo -e "${C}══════════════════════════════════════${X}"
 
-# ===== KIỂM TRA KEY KÍCH HOẠT =====
-VALID_KEYS=(
-    "TUAT-2024-ABC123"
-    "TUAT-VIP-XYZ789"
-    "TUAT-FREE-111222"
-)
-
-say "Vui lòng nhập key để kích hoạt tool."
-read -r -p "🔑 Key: " USER_KEY
-
-KEY_OK=0
-for k in "${VALID_KEYS[@]}"; do
-    if [[ "$USER_KEY" == "$k" ]]; then
-        KEY_OK=1
-        break
-    fi
-done
-
-if [[ "$KEY_OK" -ne 1 ]]; then
-    fail "Key không hợp lệ hoặc đã hết hạn. Liên hệ Tuất Tech để lấy key."
-fi
-ok "Key hợp lệ. Bắt đầu cài đặt..."
-# ===== HẾT PHẦN KIỂM TRA KEY =====
-
 # 1. Kiểm tra Termux
 [ -d "/data/data/com.termux" ] || fail "Chỉ chạy được trong Termux, tổng tài duck."
 
