@@ -307,4 +307,61 @@ def m_check():
     (ok if s.get("webhook") else warn)("Webhook: %s" % ("bật" if s.get("webhook") else "tắt"))
     if R.Shell.root and pkgs:
         for p in pkgs:
-            print("  %s: %s" % (p, col("đang chạy", "g") if R.is_running(p) else col("đang
+            state = col("đang chạy", "g") if R.is_running(p) else col("đang tắt", "d")
+            print("  %s: %s" % (p, state))
+    pause()
+
+
+# ───────────────────────── 6. Prefix ─────────────────────────
+def m_prefix():
+    cfg = init()
+    cur = cfg["settings"]["package_prefix"]
+    print("Prefix hiện tại:", col(cur, "y"))
+    print(col("Ví dụ: com.roblox (bản gốc + clone com.roblox.xxx)", "d"))
+    new = ask("Nhập prefix mới (Enter giữ nguyên)", cur)
+    cfg["settings"]["package_prefix"] = new
+    R.save_cfg(cfg)
+    found = get_pkgs(cfg)
+    ok("Đã lưu. Tìm thấy %d package:" % len(found))
+    for p in found:
+        print("  •", p)
+    pause()
+
+
+# ───────────────────────── Main loop ─────────────────────────
+MENU = [
+    ("1", "Start Auto Rejoin", m_start),
+    ("2", "Setup Game ID cho Packages", m_setup),
+    ("3", "Auto Login bằng Cookie (root)", m_cookie),
+    ("4", "Discord Webhook", m_webhook),
+    ("5", "Auto Check Setup", m_check),
+    ("6", "Cấu hình Package Prefix", m_prefix),
+    ("0", "Thoát", None),
+]
+
+
+def main():
+    while True:
+        banner()
+        for k, label, _ in MENU:
+            print("  %s  %s" % (col("[%s]" % k, "B", "y"), label))
+        print(col("─" * 44, "d"))
+        c = ask("Nhập lệnh")
+        if c == "0":
+            print("Tạm biệt tổng tài technologia.")
+            return
+        fn = next((f for k, _, f in MENU if k == c), None)
+        if fn is None:
+            continue
+        banner()
+        try:
+            fn()
+        except KeyboardInterrupt:
+            print()
+        except Exception as e:
+            bad("Lỗi: %r" % e)
+            pause()
+
+
+if __name__ == "__main__":
+    main()
