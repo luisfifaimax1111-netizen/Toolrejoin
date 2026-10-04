@@ -15,7 +15,7 @@ fail() { echo -e "${R}✘${X} $*"; exit 1; }
 
 clear
 echo -e "${C}══════════════════════════════════════${X}"
-echo -e "${C}   TUẤT TECH · ROBLOX AUTO REJOIN${X}"
+echo -e "${C}  TECH BỐ RYN · ROBLOX AUTO REJOIN${X}"
 echo -e "${C}══════════════════════════════════════${X}"
 
 # 1. Kiểm tra Termux
