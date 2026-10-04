@@ -38,7 +38,7 @@ def banner():
     clear()
     w = min(shutil.get_terminal_size((44, 20)).columns, 52)
     print(col("═" * w, "c"))
-    print(col("  TUẤT TECH  ·  ROBLOX AUTO REJOIN", "B", "c"))
+    print(col("  TECH BỐ RYN ·  ROBLOX AUTO REJOIN", "B", "c"))
     print(col("  Version %s · Termux" % VERSION, "d"))
     print(col("═" * w, "c"))
 
@@ -368,7 +368,7 @@ def main():
         print(col("─" * 44, "d"))
         c = ask("Nhập lệnh")
         if c == "0":
-            print("Tạm biệt tổng tài duck.")
+            print("Tạm biệt tổng tài Technologia.")
             return
         fn = next((f for k, _, f in MENU if k == c), None)
         if fn is None:
