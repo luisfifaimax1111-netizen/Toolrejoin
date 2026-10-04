@@ -15,7 +15,7 @@ fail() { echo -e "${R}LOI${X} $*"; exit 1; }
 
 clear
 echo -e "${C}==============================${X}"
-echo -e "${C}  TUAT TECH - ROBLOX REJOIN${X}"
+echo -e "${C}  TECH BỐ CỦA RYN - ROBLOX REJOIN${X}"
 echo -e "${C}==============================${X}"
 
 [ -d "/data/data/com.termux" ] || fail "Chi chay duoc trong Termux."
