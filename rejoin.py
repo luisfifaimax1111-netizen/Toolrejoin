@@ -417,6 +417,27 @@ STATUS_VIEW = {
 }
 
 
+_KEY_CACHE = {"txt": "Key: dang kiem tra...", "ts": 0, "busy": False}
+
+
+def key_line():
+    now = time.time()
+    if now - _KEY_CACHE["ts"] > 300 and not _KEY_CACHE["busy"]:
+        _KEY_CACHE["busy"] = True
+
+        def _work():
+            try:
+                import auth
+                t, c = auth.key_status()
+                _KEY_CACHE["txt"] = "Key: " + col(t, c)
+            except Exception:
+                _KEY_CACHE["txt"] = "Key: " + col("khong ro", "y")
+            _KEY_CACHE["ts"] = time.time()
+            _KEY_CACHE["busy"] = False
+        threading.Thread(target=_work, daemon=True).start()
+    return _KEY_CACHE["txt"]
+
+
 def render(snaps, root, started):
     width = min(shutil.get_terminal_size((48, 20)).columns, 60)
     line = col("─" * width, "d")
@@ -441,6 +462,7 @@ def render(snaps, root, started):
             s["last_event"][: width - 18]))
         out.append(line)
     out.append(col("Ctrl+C để dừng | dừng tool không tắt game", "d"))
+    out.insert(1, key_line())
     return "\n".join(out)
 
 
