@@ -40,6 +40,8 @@ def banner():
     print(col("═" * w, "c"))
     print(col("  TECH BỐ RYN ·  ROBLOX AUTO REJOIN", "B", "c"))
     print(col("  Version %s · Termux" % VERSION, "d"))
+    ktxt, kcol = auth.key_status()
+    print("  Key: " + col(ktxt, kcol))
     print(col("═" * w, "c"))
 
 
