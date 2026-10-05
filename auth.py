@@ -13,6 +13,7 @@ OFFLINE_GRACE = 24 * 3600
 APP_DIR = Path(os.environ.get("REJOIN_HOME", str(Path.home() / ".rejoin")))
 LIC = APP_DIR / "license.json"
 DEV_FILE = APP_DIR / "device_id"
+_STATE = {"ok": None, "exp": 0, "ts": 0}
 
 
 def device_id():
@@ -43,6 +44,10 @@ def check(key):
     try:
         with urllib.request.urlopen(req, timeout=10) as r:
             js = json.loads(r.read().decode())
+        _STATE["ok"] = bool(js.get("ok"))
+        _STATE["ts"] = time.time()
+        if js.get("ok"):
+            _STATE["exp"] = js.get("exp") or 0
         return js.get("ok", False), js.get("msg", "")
     except Exception as e:
         return None, "%r" % e
@@ -88,3 +93,26 @@ def require():
             return False
         print("%s (%d/3)" % (msg, n + 1))
     return False
+
+
+def key_status():
+    """Tra ve (chu, mau) de hien tren dau menu."""
+    key = load_lic().get("key")
+    if not key:
+        return "KHONG HOAT DONG", "r"
+    if time.time() - _STATE["ts"] > 300:
+        check(key)
+        _STATE["ts"] = time.time()
+    if _STATE["ok"] is None:
+        return "OFFLINE (dung key da luu)", "y"
+    if _STATE["ok"] is False:
+        return "KHONG HOAT DONG", "r"
+    exp = _STATE["exp"]
+    if not exp:
+        return "HOAT DONG - vinh vien", "g"
+    left = int(exp - time.time())
+    if left <= 0:
+        return "HET HAN", "r"
+    d, rem = divmod(left, 86400)
+    h, rem = divmod(rem, 3600)
+    return "HOAT DONG - con %dn %dg %dp" % (d, h, rem // 60), "g"
