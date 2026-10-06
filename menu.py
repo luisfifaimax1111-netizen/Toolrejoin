@@ -126,36 +126,131 @@ def m_start():
     pause()
 
 
+def parse_place(txt):
+    import re
+    txt = (txt or "").strip()
+    m = re.search(r"/games/(\d+)", txt)
+    if m:
+        return m.group(1)
+    m = re.search(r"placeId=(\d+)", txt)
+    if m:
+        return m.group(1)
+    return txt if txt.isdigit() else None
+
+
+def default_games():
+    return [
+        {"name": "Blox Fruits", "id": "2753915549"},
+        {"name": "Grow A Garden", "id": "129292803622085"},
+        {"name": "King Legacy", "id": "4520749081"},
+        {"name": "Fisch", "id": "16732694052"},
+        {"name": "Bee Swarm Simulator", "id": "1537690962"},
+        {"name": "Anime Last Stand", "id": "12886143095"},
+        {"name": "Dead Rails Alpha", "id": "110292020280424"},
+        {"name": "All Star Tower Defense X", "id": "8965076013"},
+        {"name": "99 Nights In The Forest", "id": "12297129805"},
+        {"name": "Murder Mystery 2", "id": "142823291"},
+        {"name": "Steal A Brainrot", "id": "88200673031021"},
+        {"name": "Blue Lock Rivals", "id": "18668065416"},
+        {"name": "Arise Crossover", "id": "118228308693890"},
+    ]
+
+
+def merge_games(cfg):
+    cur = cfg["settings"].get("games", [])
+    out = []
+    seen = set()
+    for g in default_games():
+        out.append(dict(g))
+        seen.add(g["name"].lower())
+    for g in cur:
+        k = g.get("name", "").lower()
+        if k and k not in seen and not k.startswith("blox fruits - sea"):
+            out.append(g)
+            seen.add(k)
+    cfg["settings"]["games"] = out
+    return out
+
+
+def pick_game(games, txt):
+    if txt.isdigit() and 1 <= int(txt) <= len(games):
+        return games[int(txt) - 1]["id"]
+    return parse_place(txt)
+
+
 def m_setup():
     cfg = init()
+    games = merge_games(cfg)
     pkgs = get_pkgs(cfg)
     if not pkgs:
-        bad("Không thấy package nào với prefix '%s'. Vào mục 6 chỉnh prefix."
-            % cfg["settings"]["package_prefix"])
+        bad("Không thấy package nào. Vào mục 6 chỉnh prefix.")
         return pause()
-    print("Tìm thấy %d package:" % len(pkgs))
-    for n, p in enumerate(pkgs, 1):
-        cur = next((i["place_id"] for i in cfg["instances"] if i["package"] == p), "")
-        tag = col("(ID: %s)" % cur, "d") if cur else ""
-        print("  [%d] %s %s" % (n, p, tag))
-    print("\n  [1] Dùng 1 Game ID cho TẤT CẢ package")
-    print("  [2] Đặt Game ID riêng từng package")
+    while True:
+        banner()
+        print("Package tìm thấy: %d" % len(pkgs))
+        for p in pkgs:
+            cur = next((i["place_id"] for i in cfg["instances"] if i["package"] == p), "")
+            tag = col("(ID: %s)" % cur, "d") if cur else col("(chưa có ID)", "r")
+            print("  • %s %s" % (p, tag))
+        print("\nDanh sách game:")
+        for n, g in enumerate(games, 1):
+            print("  %s %s" % (col("%d." % n, "B", "y"), g["name"]))
+        print("\n  [A] Thêm game mới (dán link hoặc ID)")
+        print("  [D] Xoá game khỏi danh sách")
+        print("  [I] Nhập ID/link trực tiếp, không lưu")
+        print("  [0] Quay lại menu")
+        c = ask("Chọn").strip()
+        if c == "0" or c == "":
+            return
+        if c.lower() == "a":
+            name = ask("Tên game")
+            pid = parse_place(ask("Dán link trang game hoặc Place ID"))
+            if not name or not pid:
+                bad("Tên trống hoặc không đọc được ID.")
+                pause()
+                continue
+            games.append({"name": name, "id": pid})
+            R.save_cfg(cfg)
+            ok("Đã thêm %s (%s)" % (name, pid))
+            pause()
+            continue
+        if c.lower() == "d":
+            k = ask("Số game cần xoá")
+            if k.isdigit() and 1 <= int(k) <= len(games):
+                gone = games.pop(int(k) - 1)
+                R.save_cfg(cfg)
+                ok("Đã xoá " + gone["name"])
+            else:
+                bad("Số không hợp lệ.")
+            pause()
+            continue
+        if c.lower() == "i":
+            pid = parse_place(ask("Dán link hoặc Place ID"))
+        else:
+            pid = pick_game(games, c)
+        if not pid:
+            bad("Không đọc được Place ID.")
+            pause()
+            continue
+        break
+    print("\nGame đã chọn, ID: %s" % col(pid, "y"))
+    print("  [1] Dùng cho TẤT CẢ package")
+    print("  [2] Chọn từng package (mỗi package một game khác)")
     mode = ask("Chọn", "1")
+    link = ask("Link code private server (Enter bỏ qua)")
     if mode == "1":
-        pid = ask("Nhập Place ID")
-        if not pid.isdigit():
-            bad("Place ID phải là số.")
-            return pause()
-        link = ask("Link code private server (Enter để bỏ qua)")
         for p in pkgs:
             inst = ensure_inst(cfg, p, pid)
             inst["link_code"] = link
     else:
         for p in pkgs:
-            pid = ask("Place ID cho %s (Enter bỏ qua)" % p)
-            if pid.isdigit():
-                inst = ensure_inst(cfg, p, pid)
-                inst["link_code"] = ask("  Link code private (Enter bỏ qua)")
+            v = ask("%s: số game / ID / link (Enter = game vừa chọn, s = bỏ qua)" % p)
+            if v.lower() == "s":
+                continue
+            use = pick_game(games, v) if v else pid
+            if use:
+                inst = ensure_inst(cfg, p, use)
+                inst["link_code"] = link
     R.save_cfg(cfg)
     ok("Đã lưu cấu hình.")
     pause()
