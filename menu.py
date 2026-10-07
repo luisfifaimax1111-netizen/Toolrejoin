@@ -443,6 +443,92 @@ def m_prefix():
     pause()
 
 
+def _safe_pkg(p):
+    import re
+    return bool(re.match(r"^[A-Za-z0-9_.]+$", p))
+
+
+def _edit_root_file(path, fn):
+    q = shlex.quote
+    out = R.Shell.sh("cat %s 2>/dev/null" % q(path))
+    if not out:
+        return False
+    new = fn(out)
+    if new == out:
+        return False
+    tmp = tempfile.mkdtemp()
+    local = os.path.join(tmp, "f")
+    with open(local, "w", encoding="utf-8") as f:
+        f.write(new)
+    R.Shell.sh("cp %s %s" % (q(local), q(path)))
+    shutil.rmtree(tmp, ignore_errors=True)
+    return True
+
+
+def _low_quality(txt):
+    import re
+    txt = re.sub(r'(<int name="GraphicsQualityLevel" value=")\d+(")', r"\g<1>1\2", txt)
+    txt = re.sub(r'(<int name="SavedQualityLevel" value=")\d+(")', r"\g<1>1\2", txt)
+    txt = re.sub(r'(<token name="SavedQualityLevel">)\d+(</token>)', r"\g<1>1\2", txt)
+    return txt
+
+
+def lag_ram(pkgs):
+    R.Shell.sh("sync; echo 3 > /proc/sys/vm/drop_caches")
+    R.Shell.sh("am kill-all")
+    n = 0
+    for p in pkgs:
+        if not _safe_pkg(p) or R.is_running(p):
+            continue
+        R.Shell.sh("rm -rf /data/data/%s/cache/*" % p)
+        n += 1
+    ok("Đã dọn RAM, xoá cache %d clone đang tắt." % n)
+
+
+def lag_anim():
+    for k in ("window_animation_scale", "transition_animation_scale",
+              "animator_duration_scale"):
+        R.Shell.sh("settings put global %s 0.0" % k)
+    ok("Đã tắt hoạt ảnh hệ thống.")
+
+
+def lag_gfx(pkgs):
+    n = 0
+    for p in pkgs:
+        if not _safe_pkg(p) or R.is_running(p):
+            continue
+        cmd = "find /data/data/%s/files -name 'GlobalBasicSettings*.xml' 2>/dev/null" % p
+        out = R.Shell.sh(cmd) or ""
+        for path in out.splitlines():
+            path = path.strip()
+            if path.endswith(".xml") and _edit_root_file(path, _low_quality):
+                n += 1
+    if n:
+        ok("Đã hạ đồ họa %d file cài đặt." % n)
+    else:
+        warn("Không sửa được file nào. Mở game 1 lần rồi tắt đi, hoặc đồ họa đã thấp.")
+
+
+def m_lag():
+    cfg = init()
+    if not R.Shell.root:
+        bad("Mục này cần root.")
+        return pause()
+    pkgs = get_pkgs(cfg)
+    print("  [1] Dọn RAM + cache (clone đang tắt)")
+    print("  [2] Tắt hoạt ảnh hệ thống")
+    print("  [3] Hạ đồ họa Roblox về thấp (clone đang tắt)")
+    print("  [4] Làm cả 3")
+    c = ask("Chọn", "4")
+    if c in ("1", "4"):
+        lag_ram(pkgs)
+    if c in ("2", "4"):
+        lag_anim()
+    if c in ("3", "4"):
+        lag_gfx(pkgs)
+    pause()
+
+
 MENU = [
     ("1", "Start Auto Rejoin", m_start),
     ("2", "Setup Game ID cho Packages", m_setup),
@@ -450,6 +536,7 @@ MENU = [
     ("4", "Discord Webhook", m_webhook),
     ("5", "Auto Check Setup", m_check),
     ("6", "Cấu hình Package Prefix", m_prefix),
+    ("7", "Fix Lag / Tối ưu (root)", m_lag),
     ("0", "Thoát", None),
 ]
 
